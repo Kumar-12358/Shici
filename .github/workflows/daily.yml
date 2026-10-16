@@ -1,0 +1,40 @@
+name: 每日李白诗推送
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  push-poem:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 恢复历史记录（跨运行持久化）
+        uses: actions/download-artifact@v4
+        with:
+          name: poem-history
+          path: .
+        continue-on-error: true
+
+      - name: 设置 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 推送今日诗词
+        env:
+          PUSHPLUS_TOKEN: ${{ secrets.PUSHPLUS_TOKEN }}
+        run: python daily_poem.py
+
+      - name: 保存历史记录（上传 artifact）
+        uses: actions/upload-artifact@v4
+        with:
+          name: poem-history
+          path: history.json
+          if-no-files-found: warn
